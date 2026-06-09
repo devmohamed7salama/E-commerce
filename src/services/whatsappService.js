@@ -1,12 +1,12 @@
 /**
  * Generate a pre-filled WhatsApp message for a single product order with customer details
  */
-export function generateWhatsAppMessage(product, options = {}, customerDetails = {}) {
-  const {
-    name,
-    price,
-    sale_price
-  } = product;
+export function generateWhatsAppMessage(
+  product,
+  options = {},
+  customerDetails = {},
+) {
+  const { name, price, sale_price } = product;
 
   const finalPrice = sale_price || price;
   const total = finalPrice * (options.qty || 1);
@@ -92,8 +92,24 @@ export function generateCartWhatsAppMessage(cartItems, customerDetails = {}) {
 /**
  * Generate the final link to open in WhatsApp
  */
+export function normalizeEgyptPhone(phone) {
+  let clean = phone.replace(/[^0-9]/g, "");
+
+  // remove leading zero (010 -> 10)
+  if (clean.startsWith("0")) {
+    clean = clean.substring(1);
+  }
+
+  // ensure Egypt country code
+  if (!clean.startsWith("20")) {
+    clean = "20" + clean;
+  }
+
+  return clean;
+}
+
 export function generateWhatsAppLink(phone, message) {
-  // Clean phone number from spaces or symbols
-  const cleanPhone = phone.replace(/[^0-9]/g, "");
+  const cleanPhone = normalizeEgyptPhone(phone);
+
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }

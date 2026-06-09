@@ -4,11 +4,11 @@ import { Helmet } from "react-helmet-async";
 import { useCart } from "../contexts/CartContext";
 import { useWhatsApp } from "../hooks/useWhatsApp";
 import { toast } from "react-hot-toast";
-import { MessageCircle, ArrowRight, Trash2, ShoppingBag } from "lucide-react";
+import { MessageCircle, ArrowRight, Trash2, ShoppingBag, ClipboardCopy } from "lucide-react";
 
 export default function CheckoutPage() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
-  const { sendCartToWhatsApp } = useWhatsApp();
+  const { sendCartToWhatsApp, getCartMessage, getAdminPhone } = useWhatsApp();
 
   // Form states
   const [customerName, setCustomerName] = useState("");
@@ -18,6 +18,22 @@ export default function CheckoutPage() {
   const [customerLandmark, setCustomerLandmark] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lastMessage, setLastMessage] = useState("");
+  const [lastPhone, setLastPhone] = useState("");
+
+  const copyToClipboard = async () => {
+    if (!lastMessage) {
+      toast.error("لا توجد رسالة للنسخ. املء بانات الطلب أولاً.");
+      return;
+    }
+    const text = `📞 رقم المسؤول: ${lastPhone}\n\n${lastMessage}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("تم نسخ الرسالة ورقم المسؤول!");
+    } catch {
+      toast.error("فشل النسخ. الرجاء النسخ يدوياً.");
+    }
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -57,7 +73,11 @@ export default function CheckoutPage() {
       notes: customerNotes,
     };
 
+    const message = getCartMessage(cartItems, customerDetails);
+    const phone = getAdminPhone();
     const url = sendCartToWhatsApp(cartItems, customerDetails);
+    setLastMessage(message);
+    setLastPhone(phone);
     
     // Redirect to WhatsApp
     window.open(url, "_blank");
@@ -264,6 +284,16 @@ export default function CheckoutPage() {
                   >
                     <span>تأكيد وإرسال الطلب عبر واتساب</span>
                     <MessageCircle size={22} />
+                  </button>
+                </div>
+                <div className="col-12">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                    onClick={copyToClipboard}
+                  >
+                    <ClipboardCopy size={18} />
+                    <span>نسخ الرسالة ورقم المسؤول (فحال لم يعمل زر الواتساب)</span>
                   </button>
                 </div>
               </form>
